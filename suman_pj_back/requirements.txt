@@ -1,0 +1,8 @@
+asgiref==3.9.0
+Django==5.2.4
+djangorestframework==3.16.0
+psycopg2-binary==2.9.10
+python-decouple
+sqlparse==0.5.3
+django-cors-headers
+Pillow

@@ -1,0 +1,32 @@
+# docker-compose.yml (suman_project 폴더 안에 생성)
+version: '3.8'
+
+services:
+  db: # PostgreSQL 데이터베이스 서비스
+    image: postgres:14-alpine # PostgreSQL 14 버전의 경량 이미지를 사용합니다.
+    environment:
+      POSTGRES_DB: ${DB_NAME}      # .env 파일에서 DB 이름 가져오기
+      POSTGRES_USER: ${DB_USER}    # .env 파일에서 DB 사용자 이름 가져오기
+      POSTGRES_PASSWORD: ${DB_PASSWORD} # .env 파일에서 DB 비밀번호 가져오기
+    volumes:
+      - db_data:/var/lib/postgresql/data # 데이터 영속성을 위한 볼륨 마운트
+    ports:
+      - "5432:5432" # 선택 사항: 호스트에서도 DB에 직접 접근하려면 주석 해제 (SQL 클라이언트 등)
+    restart: always # 컨테이너 종료 시 항상 재시작
+
+  web: # Django 백엔드 서비스
+    build: ./suman_pj_back # suman_pj_back/Dockerfile을 사용하여 이미지를 빌드합니다.
+    # command: gunicorn suman_pj_back.wsgi:application --bind 0.0.0.0:8000 # 배포 시 사용
+    command: python /app/suman_pj_back/manage.py runserver 0.0.0.0:8000 # 개발용 Django 서버 실행
+    volumes:
+      - ./suman_pj_back:/app/suman_pj_back # 호스트의 코드 변경이 컨테이너에 즉시 반영되도록 마운트
+    ports:
+      - "8000:8000" # 호스트의 8000번 포트를 컨테이너의 8000번 포트에 연결
+    env_file: # .env 파일에서 환경 변수를 가져옵니다.
+      - ./.env
+    depends_on: # db 서비스가 먼저 시작되도록 설정합니다.
+      - db
+    restart: always
+
+volumes: # 데이터 영속성을 위한 볼륨 정의
+  db_data: # PostgreSQL 데이터가 저장될 볼륨

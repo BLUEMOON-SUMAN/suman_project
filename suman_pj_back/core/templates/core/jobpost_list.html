@@ -1,0 +1,16 @@
+<h1>채용 공고</h1>
+{% for job in jobposts %}
+  <div>
+    <h2>{{ job.title }}</h2>
+    {% if job.image %}
+      <img src="{{ job.image.url }}" width="200">
+    {% endif %}
+    <p>{{ job.description }}</p>
+    <ul>
+      {% for link in job.links.all %}
+        <li><a href="{{ link.url }}" target="_blank">{{ link.label }}</a></li>
+      {% endfor %}
+    </ul>
+    <hr>
+  </div>
+{% endfor %}
