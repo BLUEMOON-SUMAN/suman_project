@@ -16,9 +16,8 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from core.urls import router as jobpost_router
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/', include(jobpost_router.urls)),
+    path('api/', include('core.urls')),
 ]

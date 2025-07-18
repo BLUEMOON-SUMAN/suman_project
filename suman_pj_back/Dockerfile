@@ -17,6 +17,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # 현재는 개발 편의를 위해 볼륨을 주로 쓰겠지만, 이미지 빌드 관점에서 필요하니 넣어둡시다.
 COPY . /app/suman_pj_back
 
+WORKDIR /app/suman_pj_back
+
 # Django 애플리케이션이 외부에서 접근할 포트를 지정합니다.
 EXPOSE 8000
 

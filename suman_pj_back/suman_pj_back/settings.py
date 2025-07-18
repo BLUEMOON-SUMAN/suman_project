@@ -152,3 +152,40 @@ MEDIA_ROOT = BASE_DIR / 'media'
 # templates 디렉토리 설정 확인
 TEMPLATES[0]['DIRS'] += [os.path.join(BASE_DIR, 'templates')]
 
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'analytics_app': { # 이 부분을 여러분의 앱 이름(예: core)으로 변경
+            'handlers': ['console'],
+            'level': 'DEBUG', # 디버그 레벨로 설정하여 상세 로그를 볼 수 있도록
+            'propagate': False,
+        },
+    },
+}
