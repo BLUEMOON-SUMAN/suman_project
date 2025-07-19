@@ -15,6 +15,8 @@ import os
 from decouple import config
 from django.conf import settings
 
+from datetime import timedelta
+    
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -23,7 +25,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-3g5tbi0z+0l8q7qvq!^fhm+t*7w($$pp6bsoyh*pau!jfpd_gd'
+SECRET_KEY = config('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=True, cast=bool)
@@ -43,13 +45,58 @@ INSTALLED_APPS = [
     'rest_framework',
     'corsheaders',
 
-    'contact',
-    'jobs',
-    'notices',
-    'products',
+    'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist',
+
+    'Inquiries',
+    'question',
+    'django_filters',
+    'user',
     'core',
+
     
 ]
+
+REST_FRAMEWORK = {
+    'DEFAULT_FILTER_BACKENDS' : ['django_filters.rest_framework.DjangoFilterBackend'],
+    'DEFAULT_AUTHENTICATION_CLASSES' : ('rest_framework_simplejwt.authentication.JWTAuthentication',),
+}
+
+SIMPLE_JWT = {
+    # -- 토근 만료 시간 설정 
+    'ACCESS_TOKEN_LIFETIME' : timedelta(minutes=15),
+    'REFRESH_TOKEN_LIFETIME' : timedelta(days = 1),
+    # -- 리프레시 토큰 갱신 정책
+    'ROTATE_REFRESH_TOKENS' : True,
+    'BLACKLIST_AFTER_ROTATION' : True,
+    'UPDATE_LAST_LOGIN' : False,
+    # -- 토큰 서명 및 암호화 설정
+    'ALGORITHM' : 'HS256',
+    'SIGNING_KEY' : 'SECRET_KEY',
+    'VERIFYING_KEY' : None,
+    'AUDIENCE' : None,
+    'ISSUER' : None,
+    'JWK_URL' : None,
+    'LEEWAY' : 0,
+    # -- HTTP 헤더 및 사용자 식별 설정
+    'AUTH_HEADER_TYPES' : ('Bearer',),
+    'AUTH_HEADER_NAME' : 'HTTP_AUTHORIZATION',
+    'USER_ID_FIELD' : 'id',
+    'USER_ID_CLAIM' : 'user_id',
+    'USER_AUTHENTICATION_RULE' : 'rest_framework_simplejwt.authentication.default_user_authentication_rule',
+    # -- 토큰 클래스 및 타입 설정
+    'AUTH_TOKEN_CLASSES' : ('rest_framework_simplejwt.tokens.AccessToken',),
+    'TOKEN_TYPE_CLAIM' : 'token_type',
+    'TOKEN_USER_CLASS' : 'rest_framework_simplejwt.models.TokenUser',
+
+    'JTI_CLAIM' : 'jti',
+    # -- 슬라이딩 토큰 설정(선택사항이며 기본적으로는 사용하지 않음.)
+    'SLIDING_TOKEN_REFRESH_EXP_CLAIM' : 'refresh_exp',
+    'SLIDING_TOKEN_LIFETIME' : timedelta(minutes=5),
+    'SLIDING_TOKEN_REFRESH_LIFETIME' : timedelta(days=1),
+    
+
+}
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',

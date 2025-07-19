@@ -12,10 +12,17 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name='SiteSetting',
+            name='JobPost',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('recruitment_link', models.URLField(blank=True, verbose_name='채용 링크')),
+                ('title', models.CharField(max_length=200, verbose_name='공고 제목')),
+                ('description', models.TextField(verbose_name='공고 내용')),
+                ('posted_date', models.DateTimeField(auto_now_add=True, verbose_name='등록일')),
             ],
+            options={
+                'verbose_name': '채용공고',
+                'verbose_name_plural': '채용공고',
+                'ordering': ['-posted_date'],
+            },
         ),
     ]

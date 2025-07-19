@@ -1,3 +1,14 @@
 .env
 suman_pj_back/ga_service_account_key.json
 ._pycache
+
+venv/
+
+__pycache__/
+*.pyc
+
+*.log
+
+node_modules/
+
+build/ 
