@@ -19,10 +19,11 @@ from django.urls import path, include
 from Inquiries.urls import router as Inquery_router
 from question.urls import router as faq_router
 from core.urls import router as jobpost_router
+from core.urls import router as analytics_router
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/', include('core.urls')),
+    path('api/', include(analytics_router.urls)),
     path('api/', include(Inquery_router.urls)),
     path('api/', include(faq_router.urls)),
     path('api/', include('user.urls')),
