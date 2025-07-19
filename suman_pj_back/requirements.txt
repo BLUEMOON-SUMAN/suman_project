@@ -12,3 +12,4 @@ google-auth-oauthlib==1.2.0
 google-analytics-data
 django-filter
 djangorestframework-simplejwt
+gunicorn
