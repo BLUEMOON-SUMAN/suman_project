@@ -20,6 +20,7 @@ from Inquiries.urls import router as Inquery_router
 from question.urls import router as faq_router
 from core.urls import router as jobpost_router
 from core.urls import router as analytics_router
+from django.http import HttpResponse
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -28,4 +29,5 @@ urlpatterns = [
     path('api/', include(faq_router.urls)),
     path('api/', include('user.urls')),
     path('api/', include(jobpost_router.urls)),
+    path("health/", lambda request: HttpResponse("OK"), name="health_check"),
 ]
