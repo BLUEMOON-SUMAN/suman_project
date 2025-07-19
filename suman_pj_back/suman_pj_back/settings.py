@@ -140,8 +140,8 @@ DATABASES = {
         'NAME': config('DB_NAME', default = 'your_local_db_name'), 
         'USER': config('DB_USER', default = 'your_local_db_user'), 
         'PASSWORD': config('DB_PASSWORD', default = 'your_local_db_password'),
-        'HOST': 'db',
-        'PORT': '5432',
+        'HOST': config('DB_HOST', default = 'localhost'),
+        'PORT': config('DB_PORT', default = '5432'),
     }
 }
 
