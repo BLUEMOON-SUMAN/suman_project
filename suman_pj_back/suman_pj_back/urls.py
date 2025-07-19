@@ -22,6 +22,7 @@ from core.urls import router as jobpost_router
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('api/', include('core.urls')),
     path('api/', include(Inquery_router.urls)),
     path('api/', include(faq_router.urls)),
     path('api/', include('user.urls')),
