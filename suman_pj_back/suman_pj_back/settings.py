@@ -136,9 +136,9 @@ WSGI_APPLICATION = 'suman_pj_back.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2', 
-        'NAME': config('DB_NAME'), 
-        'USER': config('DB_USER'), 
-        'PASSWORD': config('DB_PASSWORD'),
+        'NAME': config('DB_NAME', default = 'your_local_db_name'), 
+        'USER': config('DB_USER', default = 'your_local_db_user'), 
+        'PASSWORD': config('DB_PASSWORD', default = 'your_local_db_password'),
         'HOST': 'db',
         'PORT': '5432',
     }
