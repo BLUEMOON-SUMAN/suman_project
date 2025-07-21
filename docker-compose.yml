@@ -3,7 +3,7 @@ version: '3.8'
 
 services:
   db: # PostgreSQL 데이터베이스 서비스
-    image: postgres:16-alpine # PostgreSQL 16 버전의 경량 이미지를 사용합니다.
+    image: postgres:14-alpine # PostgreSQL 14 버전의 경량 이미지를 사용합니다.
     environment:
       POSTGRES_DB: ${DB_NAME}      # .env 파일에서 DB 이름 가져오기
       POSTGRES_USER: ${DB_USER}    # .env 파일에서 DB 사용자 이름 가져오기
