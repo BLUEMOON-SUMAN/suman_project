@@ -13,4 +13,4 @@ google-analytics-data
 django-filter
 djangorestframework-simplejwt
 gunicorn
-dj-database_url
+dj-database-url
