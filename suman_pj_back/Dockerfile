@@ -15,5 +15,5 @@ EXPOSE $PORT
 #  CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
 
 CMD python /app/manage.py migrate --noinput && \
-    python /app/crate_superuser.py && \
+    python /app/create_superuser.py && \
     gunicorn suman_pj_back.wsgi:application --bind 0.0.0.0:$PORT
