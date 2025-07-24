@@ -16,10 +16,12 @@ class FAQViewSet(viewsets.ModelViewSet):
     ordering_fields = ['id', 'category']    
 
     def get_queryset(self):
+        queryset = FAQ.objects.select_related('category')
+
         if self.request.user.is_authenticated and self.request.user.is_staff :
-            return FAQ.objects.all()
+            return queryset.order_by('category__order','category__name', 'id')
         else :
-            return FAQ.objects.filter(is_published = True)
+            return queryset.filter(is_published = True).order_by('category__order','category__name','id')
         
     def get_permissions(self) :
         if self.request.method == 'GET' :
