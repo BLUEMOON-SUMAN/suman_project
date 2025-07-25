@@ -19,12 +19,12 @@ from django.urls import path, include
 from Inquiries.urls import router as Inquery_router
 from question.urls import router as faq_router
 from core.urls import router as jobpost_router
-from analytics.urls import router as analytics_router
+from analytics.views import AnalyticsMonthlyVisitorsView
 from django.http import HttpResponse
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/', include(analytics_router.urls)),
+    path('api/analytics/monthly-visitors/', AnalyticsMonthlyVisitorsView.as_view(), name='analytics-mmonthly-visitors'),
     path('api/', include(Inquery_router.urls)),
     path('api/', include(faq_router.urls)),
     path('api/', include('user.urls')),
