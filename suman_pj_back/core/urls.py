@@ -1,5 +1,5 @@
 from rest_framework.routers import DefaultRouter
-from core.views import JobPostViewset, AnalyticsDataViewSet
+from core.views import JobPostViewset
 from django.urls import path, include
 
 router = DefaultRouter()
