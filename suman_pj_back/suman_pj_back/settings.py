@@ -31,7 +31,7 @@ SECRET_KEY = config('SECRET_KEY', default='your-insecure-dev-secret-key-for-loca
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=True, cast=bool)
 
-ALLOWED_HOSTS = ['https://www.suman.co.kr','*']
+ALLOWED_HOSTS = ['https://suman-project-cap5.onrender.com','*']
 
 
 # Application definition
@@ -149,7 +149,7 @@ DATABASES = {
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
-    "https://suman-project-fe.onrender.com",
+    "https://www.suman.co.kr/",
 ]
 
 CORS_ALLOW_ALL_ORIGINS = DEBUG
