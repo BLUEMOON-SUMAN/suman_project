@@ -15,8 +15,30 @@ from google.oauth2 import service_account
 import logging
 logger = logging.getLogger(__name__) # 이제 이 로거는 analytics 앱의 로그를 남길 것입니다.
 
+GA_SERVICE_ACCOUNT_KEY_JSON = os.environ.get('GOOGLE_ANALYTICS_SERVICE_ACCOUNT_KEY')
+GA_PROPERTY_ID = os.environ.get('GA_PROPERTY_ID', 'properties/497127177')
 
-# 이전 views.py에서 AnalyticsDataSerializer를 잘라내어 여기에 붙여넣습니다.
+ga_credentials = None
+if GA_SERVICE_ACCOUNT_KEY_JSON and GA_PROPERTY_ID: # 두 변수 모두 존재하는지 확인
+    try:
+        # 환경 변수에서 읽어온 JSON 문자열을 파이썬 딕셔너리로 변환
+        service_account_info = json.loads(GA_SERVICE_ACCOUNT_KEY_JSON)
+        # 딕셔너리에서 Google Credentials 객체 생성 (from_service_account_file 대신 from_service_account_info 사용)
+        ga_credentials = service_account.Credentials.from_service_account_info(
+            service_account_info,
+            scopes=['https://www.googleapis.com/auth/analytics.readonly'] # 스코프도 여기서 지정
+        )
+        logger.info("Google Analytics Credentials successfully loaded from environment variable.")
+    except json.JSONDecodeError as e:
+        logger.error(f"환경 변수에서 Google Analytics 서비스 계정 키 JSON 디코딩 오류: {e}")
+        # 이 오류가 발생하면 Render 로그에서 환경 변수 Value의 JSON 포맷을 다시 확인해야 합니다.
+    except Exception as e:
+        logger.error(f"Google Analytics Credentials 생성 중 일반 오류 발생: {e}")
+else:
+    logger.warning("GOOGLE_ANALYTICS_SERVICE_ACCOUNT_KEY 또는 GA_PROPERTY_ID 환경 변수가 설정되지 않았습니다. GA 연동 불가.")
+    
+
+
 class AnalyticsDataSerializer(serializers.Serializer):
     total_users = serializers.IntegerField(read_only=True)
     change_percentage = serializers.FloatField(read_only=True)
@@ -28,18 +50,19 @@ class AnalyticsDataViewSet(GenericViewSet):
 
     def list(self, request, *args, **kwargs):
         try:
-            # 서비스 계정 인증 정보를 로드합니다.
-            # 이 코드는 suman_project/suman_pj_back/ga_service_account_key.json 을 기대합니다.
-            SERVICE_ACCOUNT_KEY_FILE = os.path.join(
-                os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'ga_service_account_key.json'
-            )
-            credentials = service_account.Credentials.from_service_account_file(
-                SERVICE_ACCOUNT_KEY_FILE,
-                scopes=['https://www.googleapis.com/auth/analytics.readonly']
-            )
-            client = BetaAnalyticsDataClient(credentials=credentials)
-
-            GA4_PROPERTY_ID = 497127177 # 실제 웹사이트의 GA4 Property ID로 변경해야 합니다.
+            # credentials가 로드되지 않았다면 에러 반환
+            if not ga_credentials:
+                return Response(
+                    {"error": "Google Analytics Credentials not loaded. Cannot fetch data. Check server logs."},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+            
+            # GA_PROPERTY_ID가 없거나 기본값이라면 에러 반환
+            if not GA_PROPERTY_ID or GA_PROPERTY_ID == 'properties/YOUR_GA4_PROPERTY_ID':
+                 return Response(
+                    {"error": "Google Analytics Property ID is not set or invalid. Cannot fetch data."},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
 
             # --- 1. 현재까지의 총 방문 횟수 (세션 수) 조회 ---
             total_visits_request = RunReportRequest(
