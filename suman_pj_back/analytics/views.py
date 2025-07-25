@@ -11,6 +11,7 @@ from rest_framework import serializers
 from google.analytics.data_v1beta import BetaAnalyticsDataClient
 from google.analytics.data_v1beta.types import DateRange, Dimension, Metric, RunReportRequest
 from google.oauth2 import service_account
+import json
 
 import logging
 logger = logging.getLogger(__name__) # 이제 이 로거는 analytics 앱의 로그를 남길 것입니다.
