@@ -1,12 +1,12 @@
-from django.shortcuts import render
-# suman_project/suman_pj_back/analytics/views.py
-
-from rest_framework import viewsets, status, mixins
-from rest_framework.viewsets import GenericViewSet
+from django.shortcuts import render 
+from rest_framework import status
 from rest_framework.response import Response
+from rest_framework.views import APIView 
+from rest_framework.permissions import AllowAny 
+
 import os
 from datetime import datetime, timedelta
-from rest_framework import serializers
+# from rest_framework import serializers # 이 특정 APIView에서는 Serializer가 직접 사용되지 않으므로 제거 가능
 
 from google.analytics.data_v1beta import BetaAnalyticsDataClient
 from google.analytics.data_v1beta.types import DateRange, Dimension, Metric, RunReportRequest
@@ -14,113 +14,85 @@ from google.oauth2 import service_account
 import json
 
 import logging
-logger = logging.getLogger(__name__) # 이제 이 로거는 analytics 앱의 로그를 남길 것입니다.
+logger = logging.getLogger(__name__) 
 
+# 환경 변수 로드는 파일 상단에 그대로 유지
 GA_SERVICE_ACCOUNT_KEY_JSON = os.environ.get('GOOGLE_ANALYTICS_SERVICE_ACCOUNT_KEY')
 GA_PROPERTY_ID = os.environ.get('GA_PROPERTY_ID')
 
 ga_credentials = None
-if GA_SERVICE_ACCOUNT_KEY_JSON and GA_PROPERTY_ID: # 두 변수 모두 존재하는지 확인
+if GA_SERVICE_ACCOUNT_KEY_JSON and GA_PROPERTY_ID:
     try:
-        # 환경 변수에서 읽어온 JSON 문자열을 파이썬 딕셔너리로 변환
         service_account_info = json.loads(GA_SERVICE_ACCOUNT_KEY_JSON)
-        # 딕셔너리에서 Google Credentials 객체 생성 (from_service_account_file 대신 from_service_account_info 사용)
         ga_credentials = service_account.Credentials.from_service_account_info(
             service_account_info,
-            scopes=['https://www.googleapis.com/auth/analytics.readonly'] # 스코프도 여기서 지정
+            scopes=['https://www.googleapis.com/auth/analytics.readonly'] 
         )
         logger.info("Google Analytics Credentials successfully loaded from environment variable.")
     except json.JSONDecodeError as e:
         logger.error(f"환경 변수에서 Google Analytics 서비스 계정 키 JSON 디코딩 오류: {e}")
-        # 이 오류가 발생하면 Render 로그에서 환경 변수 Value의 JSON 포맷을 다시 확인해야 합니다.
     except Exception as e:
         logger.error(f"Google Analytics Credentials 생성 중 일반 오류 발생: {e}")
 else:
     logger.warning("GOOGLE_ANALYTICS_SERVICE_ACCOUNT_KEY 또는 GA_PROPERTY_ID 환경 변수가 설정되지 않았습니다. GA 연동 불가.")
-    
 
+# Google Analytics 월별 활성 사용자 데이터를 제공하는 APIView
+class AnalyticsMonthlyVisitorsView(APIView):
+    permission_classes = [AllowAny] 
 
-class AnalyticsDataSerializer(serializers.Serializer):
-    total_users = serializers.IntegerField(read_only=True)
-    change_percentage = serializers.FloatField(read_only=True)
-
-# Google Analytics Data API를 통해 방문자 통계 데이터를 제공하는 ViewSet
-class AnalyticsDataViewSet(GenericViewSet):
-    serializer_class = AnalyticsDataSerializer
-    queryset = [] # 모델과 연결되지 않으므로 더미로 둡니다.
-
-    def list(self, request, *args, **kwargs):
+    def get(self, request):
         try:
-            # credentials가 로드되지 않았다면 에러 반환
-            if not ga_credentials:
-                return Response(
-                    {"error": "Google Analytics Credentials not loaded. Cannot fetch data. Check server logs."},
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
-                )
+            if not ga_credentials or not GA_PROPERTY_ID:
+                logger.error("GA 인증 정보 또는 Property ID가 누락되었습니다.")
+                return Response({"error": "GA 인증 정보 누락"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             
-            # GA_PROPERTY_ID가 없거나 기본값이라면 에러 반환
-            if not GA_PROPERTY_ID or GA_PROPERTY_ID == 'properties/YOUR_GA4_PROPERTY_ID':
-                 return Response(
+            if GA_PROPERTY_ID == 'properties/YOUR_GA4_PROPERTY_ID':
+                logger.error("GA Property ID가 기본값으로 설정되어 있습니다. 올바른 ID로 변경해주세요.")
+                return Response(
                     {"error": "Google Analytics Property ID is not set or invalid. Cannot fetch data."},
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR
                 )
 
             client = BetaAnalyticsDataClient(credentials=ga_credentials)
-            # --- 1. 현재까지의 총 방문 횟수 (세션 수) 조회 ---
-            total_visits_request = RunReportRequest(
-                property=GA_PROPERTY_ID,
-                date_ranges=[DateRange(start_date="2020-01-01", end_date="today")],
-                metrics=[Metric(name="sessions")],
-            )
-            total_visits_response = client.run_report(total_visits_request)
-            total_users_count = 0
-            if total_visits_response.rows:
-                total_users_count = int(total_visits_response.rows[0].metric_values[0].value)
-
-            # --- 2. 지난 한 달 대비 방문 횟수 (세션 수) 변화율 계산 ---
+						
+            ######### 최근 6개월 활성 사용자 데이터를 가져오는 로직 ########
             today = datetime.now()
-            current_period_start = (today - timedelta(days=29)).strftime('%Y-%m-%d')
-            current_period_end = today.strftime('%Y-%m-%d')
-            previous_period_start = (today - timedelta(days=59)).strftime('%Y-%m-%d')
-            previous_period_end = (today - timedelta(days=30)).strftime('%Y-%m-%d')
+            # 정확히 6개월 전의 첫째 날을 계산
+            target_month = today.month - 5
+            target_year = today.year
+            while target_month <= 0:
+                target_month += 12
+                target_year -= 1
+            start_month_date = datetime(target_year, target_month, 1)
 
-            current_month_visits_request = RunReportRequest(
+            start_date = start_month_date.strftime("%Y-%m-%d")
+            end_date = today.strftime("%Y-%m-%d")
+
+            logger.info(f"GA Data API 요청 기간 (활성 사용자): {start_date} 부터 {end_date} 까지")
+
+            # GA에 요청 (GA_ID, 날짜범위, 차원(yearMonth), 측정항목(activeUsers))
+            monthly_report_request = RunReportRequest(
                 property=GA_PROPERTY_ID,
-                date_ranges=[DateRange(start_date=current_period_start, end_date=current_period_end)],
-                metrics=[Metric(name="sessions")],
+                date_ranges=[DateRange(start_date=start_date, end_date=end_date)],
+                dimensions=[Dimension(name="yearMonth")],
+                metrics=[Metric(name="activeUsers")] # <--- 세션(sessions) 대신 활성 사용자(activeUsers)로 변경
             )
-            current_month_visits_response = client.run_report(current_month_visits_request)
-            current_month_users_count = 0
-            if current_month_visits_response.rows:
-                current_month_users_count = int(current_month_visits_response.rows[0].metric_values[0].value)
+						
+            # GA서버 응답값을 response에 저장
+            response = client.run_report(monthly_report_request)
+						
+            data = []
+            for row in response.rows:
+                ym = int(row.dimension_values[0].value) 
+                active_users = int(row.metric_values[0].value) # 측정항목 이름 변경에 따라 변수명도 변경
+                data.append({"yearMonth": ym, "visitors": active_users}) # 응답 형식은 visitors로 유지
 
-            previous_month_visits_request = RunReportRequest(
-                property=GA_PROPERTY_ID,
-                date_ranges=[DateRange(start_date=previous_period_start, end_date=previous_period_end)],
-                metrics=[Metric(name="sessions")],
-            )
-            previous_month_visits_response = client.run_report(previous_month_visits_request)
-            previous_month_users_count = 0
-            if previous_month_visits_response.rows:
-                previous_month_users_count = int(previous_month_visits_response.rows[0].metric_values[0].value)
-
-            change_percentage = 0
-            if previous_month_users_count > 0:
-                change_percentage = ((current_month_users_count - previous_month_users_count) / previous_month_users_count) * 100
-            elif current_month_users_count > 0:
-                change_percentage = 100
-
-            data = {
-                "total_users": total_users_count,
-                "change_percentage": round(change_percentage, 2)
-            }
-
-            logger.info(f"Successfully fetched GA data: {data}")
-
-            serializer = self.get_serializer(data)
-            return Response(serializer.data, status=status.HTTP_200_OK)
-
+            # 데이터를 yearMonth 기준으로 오름차순 정렬
+            data = sorted(data, key=lambda x: x["yearMonth"])
+            
+            logger.info(f"Successfully fetched monthly GA data (activeUsers): {data}")
+            return Response(data, status=status.HTTP_200_OK)
+				
         except Exception as e:
-            logger.error(f"Error fetching GA data: {e}", exc_info=True)
-            return Response({"error": "Failed to fetch analytics data. Please check backend logs for details."},
-                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            logger.error(f"[GA 월별 활성 방문자] 오류: {e}", exc_info=True)
+            return Response({"error": "월별 방문자 수 불러오기 실패"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
