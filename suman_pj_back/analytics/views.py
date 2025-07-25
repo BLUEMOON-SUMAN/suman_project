@@ -67,7 +67,7 @@ class AnalyticsDataViewSet(GenericViewSet):
 
             # --- 1. 현재까지의 총 방문 횟수 (세션 수) 조회 ---
             total_visits_request = RunReportRequest(
-                property=f"properties/{GA4_PROPERTY_ID}",
+                property=GA_PROPERTY_ID,
                 date_ranges=[DateRange(start_date="2020-01-01", end_date="today")],
                 metrics=[Metric(name="sessions")],
             )
@@ -84,7 +84,7 @@ class AnalyticsDataViewSet(GenericViewSet):
             previous_period_end = (today - timedelta(days=30)).strftime('%Y-%m-%d')
 
             current_month_visits_request = RunReportRequest(
-                property=f"properties/{GA4_PROPERTY_ID}",
+                property=GA_PROPERTY_ID,
                 date_ranges=[DateRange(start_date=current_period_start, end_date=current_period_end)],
                 metrics=[Metric(name="sessions")],
             )
@@ -94,7 +94,7 @@ class AnalyticsDataViewSet(GenericViewSet):
                 current_month_users_count = int(current_month_visits_response.rows[0].metric_values[0].value)
 
             previous_month_visits_request = RunReportRequest(
-                property=f"properties/{GA4_PROPERTY_ID}",
+                property=GA_PROPERTY_ID,
                 date_ranges=[DateRange(start_date=previous_period_start, end_date=previous_period_end)],
                 metrics=[Metric(name="sessions")],
             )
