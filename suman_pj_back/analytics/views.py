@@ -65,6 +65,7 @@ class AnalyticsDataViewSet(GenericViewSet):
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR
                 )
 
+            client = BetaAnalyticsDataClient(credentials=ga_credentials)
             # --- 1. 현재까지의 총 방문 횟수 (세션 수) 조회 ---
             total_visits_request = RunReportRequest(
                 property=GA_PROPERTY_ID,
