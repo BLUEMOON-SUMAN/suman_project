@@ -17,7 +17,7 @@ import logging
 logger = logging.getLogger(__name__) # 이제 이 로거는 analytics 앱의 로그를 남길 것입니다.
 
 GA_SERVICE_ACCOUNT_KEY_JSON = os.environ.get('GOOGLE_ANALYTICS_SERVICE_ACCOUNT_KEY')
-GA_PROPERTY_ID = os.environ.get('GA_PROPERTY_ID', 'properties/497127177')
+GA_PROPERTY_ID = os.environ.get('GA_PROPERTY_ID')
 
 ga_credentials = None
 if GA_SERVICE_ACCOUNT_KEY_JSON and GA_PROPERTY_ID: # 두 변수 모두 존재하는지 확인
