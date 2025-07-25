@@ -1,5 +1,5 @@
 from rest_framework.routers import DefaultRouter
-from analytics.views import AnalyticsDataViewSet
+from .views import AnalyticsDataViewSet
 from django.urls import path, include
 
 router = DefaultRouter()
