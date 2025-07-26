@@ -55,43 +55,65 @@ class AnalyticsMonthlyVisitorsView(APIView):
 
             client = BetaAnalyticsDataClient(credentials=ga_credentials)
 						
-            ######### 최근 6개월 활성 사용자 데이터를 가져오는 로직 ########
+            ######### 최근 6개월 활성 사용자 데이터를 가져오는 로직 (0 방문자 달 포함) ########
             today = datetime.now()
-            # 정확히 6개월 전의 첫째 날을 계산
-            target_month = today.month - 5
-            target_year = today.year
-            while target_month <= 0:
-                target_month += 12
-                target_year -= 1
-            start_month_date = datetime(target_year, target_month, 1)
+            
+            # 응답에 포함되어야 할 최근 6개월의 모든 yearMonth 조합을 미리 생성
+            all_target_months = []
+            for i in range(6): # 0부터 5까지, 총 6번 반복
+                # today에서 i개월 전의 날짜를 계산
+                # (today.month - i)가 0 이하면 전년도로 넘어감
+                current_month = today.month - i
+                current_year = today.year
 
-            start_date = start_month_date.strftime("%Y-%m-%d")
+                while current_month <= 0:
+                    current_month += 12
+                    current_year -= 1
+                
+                # YYYYMM 형식으로 저장 (예: 202407)
+                all_target_months.append(int(f"{current_year}{current_month:02d}"))
+            
+            # 가장 오래된 월부터 최신 월 순으로 정렬 (예: [202402, 202403, ..., 202407])
+            all_target_months.sort()
+
+            # GA API 요청을 위한 시작 날짜와 종료 날짜 설정
+            # all_target_months의 첫 번째 월의 1일이 API 요청의 시작 날짜가 됨
+            start_year = all_target_months[0] // 100
+            start_month = all_target_months[0] % 100
+            start_date_obj = datetime(start_year, start_month, 1)
+            start_date = start_date_obj.strftime("%Y-%m-%d")
+            
+            # API 요청의 종료 날짜는 오늘 날짜
             end_date = today.strftime("%Y-%m-%d")
 
-            logger.info(f"GA Data API 요청 기간 (활성 사용자): {start_date} 부터 {end_date} 까지")
+            logger.info(f"GA Data API 요청 기간 (활성 사용자, 0 포함): {start_date} 부터 {end_date} 까지")
 
             # GA에 요청 (GA_ID, 날짜범위, 차원(yearMonth), 측정항목(activeUsers))
             monthly_report_request = RunReportRequest(
                 property=GA_PROPERTY_ID,
                 date_ranges=[DateRange(start_date=start_date, end_date=end_date)],
                 dimensions=[Dimension(name="yearMonth")],
-                metrics=[Metric(name="activeUsers")] # <--- 세션(sessions) 대신 활성 사용자(activeUsers)로 변경
+                metrics=[Metric(name="activeUsers")] 
             )
 						
-            # GA서버 응답값을 response에 저장
             response = client.run_report(monthly_report_request)
 						
-            data = []
+            # GA에서 받은 데이터를 yearMonth를 키로 하는 딕셔너리에 저장
+            ga_data_map = {}
             for row in response.rows:
                 ym = int(row.dimension_values[0].value) 
-                active_users = int(row.metric_values[0].value) # 측정항목 이름 변경에 따라 변수명도 변경
-                data.append({"yearMonth": ym, "visitors": active_users}) # 응답 형식은 visitors로 유지
+                active_users = int(row.metric_values[0].value) 
+                ga_data_map[ym] = active_users
 
-            # 데이터를 yearMonth 기준으로 오름차순 정렬
-            data = sorted(data, key=lambda x: x["yearMonth"])
-            
-            logger.info(f"Successfully fetched monthly GA data (activeUsers): {data}")
-            return Response(data, status=status.HTTP_200_OK)
+            # 최종 응답 데이터를 생성
+            final_data = []
+            for ym in all_target_months:
+                # ga_data_map에서 해당 월의 데이터를 찾고, 없으면 0으로 설정
+                visitors = ga_data_map.get(ym, 0) 
+                final_data.append({"yearMonth": ym, "visitors": visitors})
+
+            logger.info(f"Successfully fetched monthly GA data (activeUsers, with zeros): {final_data}")
+            return Response(final_data, status=status.HTTP_200_OK)
 				
         except Exception as e:
             logger.error(f"[GA 월별 활성 방문자] 오류: {e}", exc_info=True)
