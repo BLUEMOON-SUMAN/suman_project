@@ -150,7 +150,6 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
     "https://www.suman.co.kr",
-    "https://www.suman.co.kr/eng",
 ]
 
 CORS_ALLOW_ALL_ORIGINS = DEBUG
