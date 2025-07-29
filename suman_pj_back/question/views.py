@@ -2,7 +2,7 @@ from rest_framework import viewsets, filters
 from rest_framework.permissions import AllowAny, IsAdminUser
 import django_filters.rest_framework
 
-from .models import FAQ
+from .models import FAQ, Category
 from .serializers import FAQserializer
 
 
@@ -28,3 +28,4 @@ class FAQViewSet(viewsets.ModelViewSet):
         else :
             self.permission_classes = [IsAdminUser]
         return super().get_permissions()
+    
