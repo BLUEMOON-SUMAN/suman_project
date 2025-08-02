@@ -14,7 +14,7 @@ class Inquiry(models.Model) :
     class Meta :
         verbose_name = "문의"
         verbose_name_plural = "문의 목록"
-        ordering = ['-created_at']
+        ordering = ['-treatment']
 
     def __str__(self):
         return f'문의: {self.name} ({self.email})'
