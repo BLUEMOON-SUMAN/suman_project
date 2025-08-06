@@ -31,7 +31,7 @@ SECRET_KEY = config('SECRET_KEY', default='your-insecure-dev-secret-key-for-loca
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=True, cast=bool)
 
-ALLOWED_HOSTS = ['https://www.suman.co.kr', 'suman-project-cap5.onrender.com']
+ALLOWED_HOSTS = ['www.suman.co.kr', 'suman-project-31hc.onrender.com']
 
 
 # Application definition
